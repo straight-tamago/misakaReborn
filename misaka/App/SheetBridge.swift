@@ -284,19 +284,35 @@ struct SheetBridge: View {
                     UIApplication.shared.alert(title: "", body: MILocalizedString("Added Repo ..."))
                     return
                 }else if String(url.absoluteString).prefix(19) == "misaka://opentweak="  {
-                    let d = url.absoluteString.replacingOccurrences(of: "misaka://opentweak=", with: "").components(separatedBy: "&")
-                        CacheServices.shared.BuildRepositoryCache()
-                        MemorySingleton.TabSelection = 2
-                        RepositoryContentSimpleTypeDirectOpen(
-                            RepositoryContentSimpleType(RepositoryURL: d[0].replacingOccurrences(of: "http//", with: "http://").replacingOccurrences(of: "https//", with: "https://"), PackageID: d[1])
-                        ) { repositoryContentPack in
-                            if let repositoryContentPack = repositoryContentPack {
-                                DispatchQueue.main.async {
-                                    MemorySingleton.AddonPage_RepositoryContentPack = repositoryContentPack
-                                    MemorySingleton.AddonPage_isActive = true
-                                }
+                    let payload = url.absoluteString.replacingOccurrences(of: "misaka://opentweak=", with: "")
+                    let parts = payload.split(separator: "&", maxSplits: 1, omittingEmptySubsequences: false)
+                    guard parts.count == 2 else {
+                        UIApplication.shared.alert(title: "Open Tweak", body: "Invalid tweak link")
+                        return
+                    }
+
+                    let repositoryURL = String(parts[0])
+                        .replacingOccurrences(of: "http//", with: "http://")
+                        .replacingOccurrences(of: "https//", with: "https://")
+                    let packageID = String(parts[1])
+
+                    guard !repositoryURL.isEmpty, !packageID.isEmpty else {
+                        UIApplication.shared.alert(title: "Open Tweak", body: "Invalid tweak link")
+                        return
+                    }
+
+                    CacheServices.shared.BuildRepositoryCache()
+                    MemorySingleton.TabSelection = 2
+                    RepositoryContentSimpleTypeDirectOpen(
+                        RepositoryContentSimpleType(RepositoryURL: repositoryURL, PackageID: packageID)
+                    ) { repositoryContentPack in
+                        if let repositoryContentPack = repositoryContentPack {
+                            DispatchQueue.main.async {
+                                MemorySingleton.AddonPage_RepositoryContentPack = repositoryContentPack
+                                MemorySingleton.AddonPage_isActive = true
                             }
                         }
+                    }
                     return
                 }
                 DispatchQueue.global().async {
